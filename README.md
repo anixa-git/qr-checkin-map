@@ -95,3 +95,4 @@ skip.
 
 MIT — do whatever you like with it, just keep location collection consensual.
 # qr-checkin-map
+# qr-checkin-map
