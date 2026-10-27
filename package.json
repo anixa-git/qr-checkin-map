@@ -1,0 +1,14 @@
+{
+  "name": "qr-checkin-map",
+  "version": "1.0.0",
+  "description": "A consent-based QR check-in tool that plots attendees on a live map.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode": "^1.5.3"
+  }
+}

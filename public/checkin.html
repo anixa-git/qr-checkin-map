@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Event Check-in</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  .card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 32px 24px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 8px; }
+  p.sub { color: #94a3b8; font-size: 0.95rem; margin-bottom: 24px; }
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 8px;
+    border: none;
+    background: #3b82f6;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { background: #475569; cursor: not-allowed; }
+  .status { margin-top: 16px; font-size: 0.9rem; min-height: 20px; }
+  .status.ok { color: #4ade80; }
+  .status.err { color: #f87171; }
+  .consent-note {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>📍 Event Check-in</h1>
+    <p class="sub">Your browser will ask permission before sharing your location. Nothing is sent unless you allow it.</p>
+
+    <input id="name" type="text" placeholder="Your name (optional)" maxlength="40" />
+    <button id="checkinBtn">Share Location &amp; Check In</button>
+    <div id="status" class="status"></div>
+
+    <p class="consent-note">
+      We only use your location to place a pin on the live event map.
+      It is not stored once the event ends, and you can decline the
+      browser's permission prompt at any time.
+    </p>
+  </div>
+
+<script>
+  const btn = document.getElementById("checkinBtn");
+  const statusEl = document.getElementById("status");
+  const nameInput = document.getElementById("name");
+
+  btn.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      statusEl.textContent = "Your browser doesn't support geolocation.";
+      statusEl.className = "status err";
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = "Requesting permission...";
+    statusEl.className = "status";
+
+    // This line triggers the browser's native permission popup.
+    // The user must explicitly tap "Allow" for anything to happen.
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const res = await fetch("/api/checkin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: nameInput.value.trim(),
+              lat: latitude,
+              lng: longitude,
+            }),
+          });
+
+          if (!res.ok) throw new Error("Server error");
+
+          statusEl.textContent = "✅ Checked in! You're on the map.";
+          statusEl.className = "status ok";
+        } catch (err) {
+          statusEl.textContent = "Something went wrong submitting check-in.";
+          statusEl.className = "status err";
+          btn.disabled = false;
+        }
+      },
+      (error) => {
+        // Fires if the user taps "Block" / "Don't allow"
+        statusEl.textContent = "Location permission denied — check-in cancelled.";
+        statusEl.className = "status err";
+        btn.disabled = false;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+</script>
+</body>
+</html>
